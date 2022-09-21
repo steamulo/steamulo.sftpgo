@@ -1,0 +1,59 @@
+---
+
+- name: Include OS-specific variables.
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Ensure xz is installed
+  ansible.builtin.package:
+    name: "{{ sftpgo_xz_package_name }}"
+    state: present
+
+- name: Check if sftpgo is installed
+  ansible.builtin.command: /usr/bin/sftpgo -v
+  register: __sftpggo_installed_version
+  failed_when: false
+  changed_when: false
+
+- name: Check if sftpgo install is needed
+  ansible.builtin.set_fact:
+    __sftpggo_install_needed: "{{ __sftpggo_installed_version.rc != 0 or not __sftpggo_installed_version.stdout.startswith('SFTPGo ' + sftpgo_version) }}"
+
+- when: __sftpggo_install_needed
+  ansible.builtin.include_tasks: install.yml
+
+- name: Create configuration file
+  ansible.builtin.copy:
+    content: |
+      # This file is managed by Ansible, all changes will be lost.
+      {{ sftpgo_configuration | to_nice_yaml }}
+    dest: "/etc/sftpgo/sftpgo.yaml"
+    owner: "{{ sftpgo_user }}"
+    group: "{{ sftpgo_user }}"
+    mode: u=rw,g=r,o=
+  notify:
+    - Enable and Restart sftpgo
+
+- name: Create environment file
+  ansible.builtin.copy:
+    content: |
+      # This file is managed by Ansible, all changes will be lost.
+      {% if sftpgo_default_admin_username and sftpgo_default_admin_password %}
+      SFTPGO_DEFAULT_ADMIN_USERNAME={{ sftpgo_default_admin_username }}
+      SFTPGO_DEFAULT_ADMIN_PASSWORD={{ sftpgo_default_admin_password }}
+      {% endif %}
+    dest: /etc/sftpgo/sftpgo.env
+    owner: "{{ sftpgo_user }}"
+    group: "{{ sftpgo_user }}"
+    mode: u=rw,g=r,o=
+  notify:
+    - Enable and Restart sftpgo
+
+- name: Add sftpgo service
+  ansible.builtin.template:
+    src: "templates/sftpgo.service.j2"
+    dest: "/etc/systemd/system/sftpgo.service"
+    owner: root
+    group: root
+    mode: 0744
+  notify:
+    - Enable and Restart sftpgo

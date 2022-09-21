@@ -1,0 +1,27 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint: |
+  set -e
+  export ANSIBLE_ROLES_PATH=${MOLECULE_EPHEMERAL_DIRECTORY}/roles
+  ansible-lint --exclude ${MOLECULE_EPHEMERAL_DIRECTORY} -c .ansible-lint.yml
+  flake8
+platforms:
+  - name: instance
+    image: ${MOLECULE_DISTRO:-ubuntu1804}
+    dockerfile: ../docker/Dockerfile-${MOLECULE_DISTRO:-ubuntu1804}
+    pre_build_image: false
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    tmpfs:
+      - /tmp
+      - /run
+provisioner:
+  name: ansible
+verifier:
+  name: testinfra
+  options:
+    sudo: true

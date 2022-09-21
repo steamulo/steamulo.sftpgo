@@ -1,0 +1,14 @@
+---
+
+sftpgo_version: 2.3.5
+
+sftpgo_archive_url_template: "https://github.com/drakkan/sftpgo/releases/download/v{{ sftpgo_version }}/sftpgo_v{{ sftpgo_version }}_{{ ansible_system | lower }}_x86_64.tar.xz"
+
+# see all the configuration options here: https://github.com/drakkan/sftpgo/blob/main/docs/full-configuration.md
+sftpgo_configuration:
+
+sftpgo_user: sftpgo
+
+# you need to set data_provider.create_default_admin to true for user initialization
+sftpgo_default_admin_username: ""
+sftpgo_default_admin_password: ""

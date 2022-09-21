@@ -1,0 +1,17 @@
+galaxy_info:
+  role_name: sftpgo
+  author: Steamulo
+  namespace: steamulo
+  description: Installation and configuration of https://github.com/drakkan/sftpgo
+  company: Steamulo
+  license: BSD
+  min_ansible_version: 2.1
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: EL
+      versions:
+        - 7
+        - 8

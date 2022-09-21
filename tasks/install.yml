@@ -1,0 +1,75 @@
+---
+
+- name: Download sftpgo
+  ansible.builtin.get_url:
+    url: "{{ sftpgo_archive_url_template }}"
+    dest: "/tmp/sftpgo_{{ sftpgo_version }}.xz"
+
+- name: Create temporary extract directory
+  ansible.builtin.tempfile:
+    state: directory
+  register: sftpgo_temp_dir
+
+- name: Extract sftpgo
+  ansible.builtin.unarchive:
+    src: "/tmp/sftpgo_{{ sftpgo_version }}.xz"
+    remote_src: true
+    dest: "{{ sftpgo_temp_dir.path }}"
+
+- name: "Create {{ sftpgo_user }} group"
+  ansible.builtin.group:
+    name: "{{ sftpgo_user }}"
+    system: true
+    state: present
+
+- name: "Create {{ sftpgo_user }} user"
+  ansible.builtin.user:
+    name: "{{ sftpgo_user }}"
+    group: "{{ sftpgo_user }}"
+    system: true
+    comment: "SFTPGo user"
+    home: /var/lib/sftpgo
+    createhome: false
+    shell: /usr/sbin/nologin
+    state: present
+
+- name: Create sftpgo directories (1)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ sftpgo_user }}"
+    group: "{{ sftpgo_user }}"
+    mode: u=rwx,g=rx,o=rx
+  loop:
+    - /etc/sftpgo
+    - /var/lib/sftpgo
+
+- name: Create sftpgo directories (2)
+  ansible.builtin.file:
+    path: /usr/share/sftpgo
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+
+- name: Copy sftpgo binary file
+  ansible.builtin.copy:
+    src: "{{ sftpgo_temp_dir.path }}/sftpgo"
+    remote_src: true
+    dest: /usr/bin/sftpgo
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+
+- name: Copy sftpgo static and templates files
+  ansible.builtin.copy:
+    src: "{{ sftpgo_temp_dir.path }}/{{ item }}"
+    remote_src: true
+    dest: /usr/share/sftpgo
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+  loop:
+    - static
+    - templates
+    - openapi
